@@ -109,7 +109,7 @@ func (c Chain) Append(constructors ...Constructor) Chain {
 //     ext1Chain := alice.New(m3, m4).After(e1, e2)
 //     ext2Chain := stdChain.Extend(ext1Chain)
 //     // requests in stdChain  go m1 -> m2 -> handler
-//     // requests in ext1Chain go m3 -> m4 -> handler
+//     // requests in ext1Chain go m3 -> m4 -> handler -> e1 -> e2
 //     // requests in ext2Chain go m1 -> m2 -> m3 -> m4 -> handler -> e1 -> e2
 //
 // Another example:

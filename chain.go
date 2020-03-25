@@ -84,7 +84,7 @@ func (c Chain) ThenFunc(fn http.HandlerFunc) http.Handler {
 // as the last ones in the request flow.
 //
 // Append returns a new chain, leaving the original one untouched.
-// The new chain will have the original's endwares.
+// The new chain will have the original chain's endwares.
 //
 //     stdChain := alice.New(m1, m2)
 //     extChain := stdChain.Append(m3, m4)
@@ -151,7 +151,8 @@ func (c Chain) After(endwares ...Endware) Chain {
 // AppendEndware extends a chain, adding the specified endware
 // as the last ones in the request flow.
 //
-// Append returns a new chain, leaving the original one untouched.
+// AppendEndware returns a new chain, leaving the original one untouched.
+// The new chain will have the original chain's constructors.
 //
 //     stdChain := alice.New(m1).After(e1, e2)
 //     extChain := stdChain.AppendEndware(e3, e4)

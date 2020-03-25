@@ -54,7 +54,7 @@ func (c Chain) Then(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 
 		for _, endwareFn := range c.endware {
-			endwareFn(w, r)
+			endwareFn.ServeHTTP(w, r)
 		}
 	})
 
@@ -134,12 +134,30 @@ func (c Chain) Extend(chain Chain) Chain {
 // values from the request or response can be accessed. This will not
 // let you access values from the request or the response that can no longer be used.
 // e.g. re-reading a request body, re-setting the response headers, etc.
-type Endware func(http.ResponseWriter, *http.Request)
+type Endware http.Handler
 
 // After creates a new chain with the current chain's constructors
 // and the provided endwares. Endwares are executed after both the
 // constructors and the Then() handler are called.
 func (c Chain) After(endwares ...Endware) Chain {
+	return Chain{c.constructors, c.endware}.AppendEndware(endwares...)
+}
+
+// AfterFuncs works identically to After, but takes HandlerFuncs
+// instead of Endwares.
+//
+// The following two statements are equivalent:
+//     c.After(http.HandlerFunc(endwareFn))
+//     c.AfterFunc(endwareFn)
+//
+// ThenFunc provides all the guarantees of Then.
+func (c Chain) AfterFuncs(endwareFns ...func(w http.ResponseWriter, r *http.Request)) Chain {
+	// convert each http.HandlerFunc into an Endware
+	endwares := make([]Endware, len(endwareFns))
+	for i, endwareFn := range endwareFns {
+		endwares[i] = http.HandlerFunc(endwareFn)
+	}
+
 	return Chain{c.constructors, c.endware}.AppendEndware(endwares...)
 }
 

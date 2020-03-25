@@ -30,7 +30,9 @@ func New(constructors ...Constructor) Chain {
 // Then chains the middleware and endware and returns the final http.Handler.
 //     New(m1, m2, m3).After(e1, e2, e3).Then(h)
 // is equivalent to:
-//     m1(m2(m3(h(e1(e2(e3))))))
+//     m1(m2(m3(h)))
+// followed by:
+//     e1() -> e2() -> e3()
 // When the request comes in, it will be passed to m1, then m2, then m3,
 // then the given handler (who serves the response), then e1, e2, e3
 // (assuming every middleware/endware calls the following one).

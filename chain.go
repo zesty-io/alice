@@ -136,9 +136,10 @@ func (c Chain) Extend(chain Chain) Chain {
 // e.g. re-reading a request body, re-setting the response headers, etc.
 type Endware http.Handler
 
-// After creates a new chain with the current chain's constructors
-// and the provided endwares. Endwares are executed after both the
-// constructors and the Then() handler are called.
+// After creates a new chain with the original chain's
+// constructors and endwares, as well as the provided endwares.
+// Endwares are executed after both the constructors and
+// the Then() handler are called.
 func (c Chain) After(endwares ...Endware) Chain {
 	return Chain{c.constructors, c.endware}.AppendEndware(endwares...)
 }
@@ -147,10 +148,10 @@ func (c Chain) After(endwares ...Endware) Chain {
 // instead of Endwares.
 //
 // The following two statements are equivalent:
-//     c.After(http.HandlerFunc(endwareFn))
-//     c.AfterFunc(endwareFn)
+//     c.After(http.HandlerFunc(endwareFn1), http.HandlerFunc(endwareFn2))
+//     c.AfterFunc(endwareFn1, endwareFn2)
 //
-// ThenFunc provides all the guarantees of Then.
+// AfterFunc provides all the guarantees of After.
 func (c Chain) AfterFuncs(endwareFns ...func(w http.ResponseWriter, r *http.Request)) Chain {
 	// convert each http.HandlerFunc into an Endware
 	endwares := make([]Endware, len(endwareFns))

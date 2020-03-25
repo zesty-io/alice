@@ -150,14 +150,14 @@ func (c Chain) After(endwares ...Endware) Chain {
 // instead of Endwares.
 //
 // The following two statements are equivalent:
-//     c.After(http.HandlerFunc(endwareFn1), http.HandlerFunc(endwareFn2))
-//     c.AfterFunc(endwareFn1, endwareFn2)
+//     c.After(http.HandlerFunc(fn1), http.HandlerFunc(fn1))
+//     c.AfterFuncs(fn1, fn2)
 //
-// AfterFunc provides all the guarantees of After.
-func (c Chain) AfterFuncs(endwareFns ...func(w http.ResponseWriter, r *http.Request)) Chain {
+// AfterFuncs provides all the guarantees of After.
+func (c Chain) AfterFuncs(fns ...func(w http.ResponseWriter, r *http.Request)) Chain {
 	// convert each http.HandlerFunc into an Endware
-	endwares := make([]Endware, len(endwareFns))
-	for i, endwareFn := range endwareFns {
+	endwares := make([]Endware, len(fns))
+	for i, endwareFn := range fns {
 		endwares[i] = http.HandlerFunc(endwareFn)
 	}
 
@@ -186,14 +186,14 @@ func (c Chain) AppendEndware(endwares ...Endware) Chain {
 // instead of Endwares.
 //
 // The following two statements are equivalent:
-//     c.AppendEndware(http.HandlerFunc(endwareFn1), http.HandlerFunc(endwareFn2))
-//     c.AppendEndwareFuncs(endwareFn1, endwareFn2)
+//     c.AppendEndware(http.HandlerFunc(fn1), http.HandlerFunc(fn2))
+//     c.AppendEndwareFuncs(fn1, fn2)
 //
 // AppendEndwareFuncs provides all the guarantees of AppendEndware.
-func (c Chain) AppendEndwareFuncs(endwareFns ...func(w http.ResponseWriter, r *http.Request)) Chain {
+func (c Chain) AppendEndwareFuncs(fns ...func(w http.ResponseWriter, r *http.Request)) Chain {
 	// convert each http.HandlerFunc into an Endware
-	endwares := make([]Endware, len(endwareFns))
-	for i, endwareFn := range endwareFns {
+	endwares := make([]Endware, len(fns))
+	for i, endwareFn := range fns {
 		endwares[i] = http.HandlerFunc(endwareFn)
 	}
 

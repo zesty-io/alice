@@ -1,7 +1,10 @@
 // Package alice provides a convenient way to chain http handlers.
 package alice
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 // A constructor for a piece of middleware.
 // Some middleware use this constructor out of the box,
@@ -13,7 +16,25 @@ type Constructor func(http.Handler) http.Handler
 // once created, it will always hold
 // the same set of constructors in the same order.
 type Chain struct {
-	constructors []Constructor
+	constructors   []Constructor
+	endwareLogging bool
+}
+
+// Endware is functionality that is executed after a response is sent to the requester.
+// Much like middleware, it is a func(http.ResponseWriter, *http.Request) with the allowance
+// that it can return errors.
+type Endware struct {
+	Fn      func(http.ResponseWriter, *http.Request) error
+	ErrorFn func(http.ResponseWriter, *http.Request, error) interface{}
+}
+
+// NewEndware creates a new piece of Endware.
+// If an error function is provided, then it is included in the Endware.
+// Error functions are executed if an error occurs during the Endware's main function.
+func NewEndware(
+	fn func(w http.ResponseWriter, r *http.Request) error,
+	errorFn ...func(http.ResponseWriter, *http.Request, error) interface{}) Endware {
+	return Endware{fn, errorFn[0]}
 }
 
 // New creates a new chain,
@@ -21,7 +42,7 @@ type Chain struct {
 // New serves no other function,
 // constructors are only called upon a call to Then().
 func New(constructors ...Constructor) Chain {
-	return Chain{append(([]Constructor)(nil), constructors...)}
+	return Chain{append(([]Constructor)(nil), constructors...), false}
 }
 
 // Then chains the middleware and returns the final http.Handler.
@@ -42,10 +63,25 @@ func New(constructors ...Constructor) Chain {
 // For proper middleware, this should cause no problems.
 //
 // Then() treats nil as http.DefaultServeMux.
-func (c Chain) Then(h http.Handler) http.Handler {
+func (c Chain) Then(h http.Handler, endwareFns ...Endware) http.Handler {
 	if h == nil {
 		h = http.DefaultServeMux
 	}
+
+	h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h.ServeHTTP(w, r)
+
+		for i, endwareFn := range endwareFns {
+			if err := endwareFn.Fn(w, r); err != nil {
+				switch {
+				case endwareFn.ErrorFn != nil:
+					endwareFn.ErrorFn(w, r, err)
+				case c.endwareLogging:
+					fmt.Printf("error occurred during endware %v: %v", i, err)
+				}
+			}
+		}
+	})
 
 	for i := range c.constructors {
 		h = c.constructors[len(c.constructors)-1-i](h)
@@ -62,11 +98,11 @@ func (c Chain) Then(h http.Handler) http.Handler {
 //     c.ThenFunc(fn)
 //
 // ThenFunc provides all the guarantees of Then.
-func (c Chain) ThenFunc(fn http.HandlerFunc) http.Handler {
+func (c Chain) ThenFunc(fn http.HandlerFunc, endwareFns ...Endware) http.Handler {
 	if fn == nil {
-		return c.Then(nil)
+		return c.Then(nil, endwareFns...)
 	}
-	return c.Then(fn)
+	return c.Then(fn, endwareFns...)
 }
 
 // Append extends a chain, adding the specified constructors
@@ -83,7 +119,7 @@ func (c Chain) Append(constructors ...Constructor) Chain {
 	newCons = append(newCons, c.constructors...)
 	newCons = append(newCons, constructors...)
 
-	return Chain{newCons}
+	return Chain{newCons, c.endwareLogging}
 }
 
 // Extend extends a chain by adding the specified chain
@@ -109,4 +145,10 @@ func (c Chain) Append(constructors ...Constructor) Chain {
 //		// requests to aHtml hitting nosurfs failure handler go m1 -> nosurf -> m2 -> csrfFail
 func (c Chain) Extend(chain Chain) Chain {
 	return c.Append(chain.constructors...)
+}
+
+// SetEndwareLogging will determine whether errors that occur during Endware execution
+// are printed to stdout. Default is false for new Chains.
+func (c Chain) SetEndwareLogging(logging bool) Chain {
+	return Chain{c.constructors, c.endwareLogging}
 }

@@ -134,9 +134,10 @@ func (c Chain) Extend(chain Chain) Chain {
 // wishes to take after fulfilling a user's request. Like middleware,
 // it is a
 // 		func(http.ResponseWriter, *http.Request)
+
 // so values from the Request or Response can be accessed.
 //
-// *Note:* This will not let you access values from
+// **Note:** This will not let you access values from
 // the Request or the Response that can no longer be used.
 //
 // e.g. re-reading a Request body, re-setting the Response headers, etc.

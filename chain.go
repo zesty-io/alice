@@ -132,9 +132,7 @@ func (c Chain) Extend(chain Chain) Chain {
 // Endware is functionality executed after a response
 // is sent to the requester. It is used for any actions the server
 // wishes to take after fulfilling a user's request. Like middleware,
-// it is a
-// 		func(http.ResponseWriter, *http.Request)
-// so values from the Request or Response can be accessed.
+// values from the Request or Response can be accessed.
 //
 // **Note:** This will not let you access values from
 // the Request or the Response that can no longer be used.

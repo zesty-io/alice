@@ -181,3 +181,21 @@ func (c Chain) AppendEndware(endwares ...Endware) Chain {
 
 	return Chain{c.constructors, newEnds}
 }
+
+// AppendEndwareFuncs works identically to AppendEndware, but takes HandlerFuncs
+// instead of Endwares.
+//
+// The following two statements are equivalent:
+//     c.AppendEndware(http.HandlerFunc(endwareFn1), http.HandlerFunc(endwareFn2))
+//     c.AppendEndwareFuncs(endwareFn1, endwareFn2)
+//
+// AppendEndwareFuncs provides all the guarantees of AppendEndware.
+func (c Chain) AppendEndwareFuncs(endwareFns ...func(w http.ResponseWriter, r *http.Request)) Chain {
+	// convert each http.HandlerFunc into an Endware
+	endwares := make([]Endware, len(endwareFns))
+	for i, endwareFn := range endwareFns {
+		endwares[i] = http.HandlerFunc(endwareFn)
+	}
+
+	return Chain{c.constructors, c.endware}.AppendEndware(endwares...)
+}
